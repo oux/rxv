@@ -49,6 +49,7 @@ YamahaCommand = '<YAMAHA_AV cmd="{command}">{payload}</YAMAHA_AV>'
 Zone = '<{zone}>{request_text}</{zone}>'
 BasicStatusGet = '<Basic_Status>GetParam</Basic_Status>'
 PowerControl = '<Power_Control><Power>{state}</Power></Power_Control>'
+PowerControlZoneB = '<Power_Control><Zone_B_Power>{state}</Zone_B_Power></Power_Control>'
 PowerControlSleep = '<Power_Control><Sleep>{sleep_value}</Sleep></Power_Control>'
 Input = '<Input><Input_Sel>{input_name}</Input_Sel></Input>'
 InputSelItem = '<Input><Input_Sel_Item>{input_name}</Input_Sel_Item></Input>'
@@ -158,6 +159,27 @@ class RXV(object):
 
         status = BasicStatus(on, volume, mute, inp)
         return status
+
+    @property
+    def bon(self):
+        request_text = PowerControlZoneB.format(state=GetParam)
+        print(request_text)
+        response = self._request('GET', request_text)
+        print(response.text)
+        power = response.find("%s/Power_Control/Zone_B_Power" % self._zone).text
+        assert power in ["On", "Standby"]
+        return power == "On"
+
+    @bon.setter
+    def bon(self, state):
+        assert state in [True, False]
+        new_state = "On" if state else "Standby"
+        request_text = PowerControlZoneB.format(state=new_state)
+        response = self._request('PUT', request_text)
+        return response
+
+    def boff(self):
+        return self.bon(False)
 
     @property
     def on(self):
